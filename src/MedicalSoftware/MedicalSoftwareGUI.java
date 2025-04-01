@@ -10,7 +10,7 @@ public class MedicalSoftwareGUI extends Application {
 	@Override
 
 	public void start(Stage primaryStage) {
-		Label label = new Label("Hello, JavaFX!");
+		Label label = new Label("Hello, Jacob!");
 		StackPane root = new StackPane(label);
 		Scene scene = new Scene(root, 300, 200);
 
