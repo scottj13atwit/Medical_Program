@@ -1,4 +1,4 @@
-package MedicalSoftware;
+	package MedicalSoftware;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,8 +55,20 @@ public class Patient {
         return lName + ", " + fName;
     }
     
-    public String getPatientID() {
+    public String getId() {
         return patientID;
+    }
+    public String getHeight() {
+    	return height;
+    }
+    public String getWeight() {
+    	return weight;
+    }
+    public String getSex() {
+    	return sex;
+    }
+    public int getAge() {
+    	return age;
     }
     
     public List<Medication> getMedicationsForInjury(String injuryId) {
