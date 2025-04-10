@@ -158,17 +158,20 @@ public class MedicalSoftwareGUI extends Application {
         });
 
         // --- Layout and scene setup ---
-        HBox root = new HBox(leftPanel, rightPanel);
-        root.setSpacing(20);
-        root.setStyle("-fx-background-color: #ffffff;");
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(leftPanel, rightPanel);
+        splitPane.setDividerPositions(0.3); // Optional: sets initial divider (30% for left)
+
+        splitPane.setStyle("-fx-background-color: #ffffff;");
+       
         HBox.setHgrow(leftPanel, Priority.ALWAYS);
         HBox.setHgrow(rightPanel, Priority.ALWAYS);
         leftPanel.setMaxWidth(Double.MAX_VALUE);
         rightPanel.setMaxWidth(Double.MAX_VALUE);
         leftPanel.setPrefWidth(0);
         rightPanel.setPrefWidth(0);
-        Scene scene = new Scene(root, 800, 500);
-
+        
+        Scene scene = new Scene(splitPane, 800, 500);
         primaryStage.setTitle("Medical Program");
         primaryStage.setScene(scene);
         primaryStage.show();
