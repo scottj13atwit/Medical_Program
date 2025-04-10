@@ -126,6 +126,12 @@ public class MedicalSoftwareGUI extends Application {
 		HBox root = new HBox(leftPanel, rightPanel);
 		root.setSpacing(20);
 		root.setStyle("-fx-background-color: #ffffff;");
+		HBox.setHgrow(leftPanel, Priority.ALWAYS);
+		HBox.setHgrow(rightPanel, Priority.ALWAYS);
+		leftPanel.setMaxWidth(Double.MAX_VALUE);
+		rightPanel.setMaxWidth(Double.MAX_VALUE);
+		leftPanel.setPrefWidth(0);
+		rightPanel.setPrefWidth(0);
 		Scene scene = new Scene(root, 800, 500);
 
 		primaryStage.setTitle("Medical Program");
