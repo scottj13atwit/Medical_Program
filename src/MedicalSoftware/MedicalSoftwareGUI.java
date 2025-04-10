@@ -97,8 +97,8 @@ public class MedicalSoftwareGUI extends Application {
                 }
                 
                 // Validate sex (must be male or female)
-                if (!patientSex.equals("male") && !patientSex.equals("female") && !patientSex.equals("M") && !patientSex.equals("F")) {
-                    showError("Sex must be either 'male', 'female', 'M'!, or 'F'");
+                if (!patientSex.equals("male") && !patientSex.equals("female")) {
+                    showError("Sex must be either 'male' or 'female'");
                     return;
                 }
                 
