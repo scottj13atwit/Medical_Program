@@ -41,10 +41,25 @@ public class MedicalSoftwareGUI extends Application {
 		leftPanel.setStyle("-fx-background-color: #abbbd4; -fx-padding: 10px;");
 
 // --- Right panel for displaying patients and search bar ---
+// --- Right panel setup with search bar and grid for patients ---
 		TextField searchBar = createTextField("Search by Name or ID");
-		VBox rightPanel = new VBox(10, searchBar); // Search bar at the top
+
+// Grid to hold patient buttons in rows and columns
+		GridPane patientGrid = new GridPane();
+		patientGrid.setHgap(10);
+		patientGrid.setVgap(10);
+		patientGrid.setPadding(new Insets(10));
+
+// Optional: Wrap grid in a scroll pane
+		ScrollPane scrollPane = new ScrollPane(patientGrid);
+		scrollPane.setFitToWidth(true);
+		scrollPane.setStyle("-fx-background: #abbbd4;");
+
+// Right panel contains the search bar and scrollable grid
+		VBox rightPanel = new VBox(10, searchBar, scrollPane);
 		rightPanel.setAlignment(Pos.TOP_LEFT);
 		rightPanel.setStyle("-fx-background-color: #abbbd4; -fx-padding: 10px;");
+		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
 // --- Submit button logic ---
 		submitButton.setOnAction(e -> {
@@ -69,7 +84,11 @@ public class MedicalSoftwareGUI extends Application {
 				patientButton.setOnAction(ev -> openPatientDetails(newPatient)); // Set click action
 
 // Add the button to the right panel
-				rightPanel.getChildren().add(patientButton);
+				int count = patientGrid.getChildren().size();
+				int columns = 3; // Set number of columns
+				int row = count / columns;
+				int col = count % columns;
+				patientGrid.add(patientButton, col, row);
 
 // Clear the input fields after submission
 				fName.clear();
@@ -86,17 +105,19 @@ public class MedicalSoftwareGUI extends Application {
 
 // --- Search bar logic ---
 		searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
-			rightPanel.getChildren().clear(); // Clear the right panel
-			rightPanel.getChildren().add(searchBar); // Re-add the search bar at the top
+			patientGrid.getChildren().clear(); // Clear the grid only
 			for (Patient patient : allPatients) {
-// Check if the patient's name or ID matches the search query
 				if (patient.getName().toLowerCase().contains(newValue.toLowerCase())
 						|| patient.getId().contains(newValue)) {
 					Button patientButton = new Button(patient.getName());
 					patientButton.setMaxWidth(Double.MAX_VALUE);
 					patientButton.setStyle("-fx-font-size: 14px; -fx-padding: 10px;");
 					patientButton.setOnAction(e -> openPatientDetails(patient));
-					rightPanel.getChildren().add(patientButton);
+					int count = patientGrid.getChildren().size();
+					int columns = 3;
+					int row = count / columns;
+					int col = count % columns;
+					patientGrid.add(patientButton, col, row);
 				}
 			}
 		});
