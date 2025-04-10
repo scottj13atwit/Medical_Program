@@ -34,4 +34,8 @@ public class Injury {
     public String getDescription() {
         return description;
     }
+
+	public String getSeverity() {
+		return null;
+	}
 }

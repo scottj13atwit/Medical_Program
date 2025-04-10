@@ -1,8 +1,7 @@
 package MedicalSoftware;
 
-import java.util.ArrayList;
-import java.util.List;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -10,10 +9,30 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
+import java.util.*;
 
 public class MedicalSoftwareGUI extends Application {
 	// A list to store all patients created during the program's runtime
 	private List<Patient> allPatients = new ArrayList<>();
+
+	// Set to track used IDs to ensure uniqueness
+	private Set<String> usedIDs = new HashSet<>();
+
+	// Random number generator for ID creation
+	private Random random = new Random();
+
+	// Helper method to generate unique 6-digit IDs
+	private String generateUniqueID() {
+		String newID;
+		do {
+			// Generate a random 6-digit number (100000-999999)
+			newID = String.valueOf(100000 + random.nextInt(900000));
+		} while (usedIDs.contains(newID));
+
+		// Add the new ID to our tracking set
+		usedIDs.add(newID);
+		return newID;
+	}
 
 	// Helper method to create styled text fields
 	private TextField createTextField(String promptText) {
@@ -44,41 +63,223 @@ public class MedicalSoftwareGUI extends Application {
 		errorStage.showAndWait(); // Shows the window and waits for it to be closed
 	}
 
+	// Initialize common injuries with their prescribed medications
+	private List<Injury> initializeCommonInjuries() {
+		List<Injury> injuries = new ArrayList<>();
+		Date now = new Date();
+		Calendar cal = Calendar.getInstance();
+
+		// Sprained Ankle injury with medications
+		Injury ankle = new Injury("I001", "Sprained Ankle", 3);
+		cal.setTime(now);
+		cal.add(Calendar.DAY_OF_YEAR, 14);
+		ankle.prescribeMedication(new Medication("Ibuprofen", "400mg every 6 hours", now, cal.getTime()));
+		ankle.prescribeMedication(new Medication("Acetaminophen", "500mg every 8 hours", now, cal.getTime()));
+
+		// Broken Arm injury with medications
+		Injury arm = new Injury("I002", "Broken Arm", 5);
+		cal.setTime(now);
+		cal.add(Calendar.DAY_OF_YEAR, 21);
+		arm.prescribeMedication(new Medication("Acetaminophen", "500mg every 6 hours", now, cal.getTime()));
+		arm.prescribeMedication(new Medication("Naproxen", "250mg every 12 hours", now, cal.getTime()));
+
+		// Concussion injury with medications
+		Injury concussion = new Injury("I003", "Concussion", 4);
+		cal.setTime(now);
+		cal.add(Calendar.DAY_OF_YEAR, 7);
+		concussion.prescribeMedication(new Medication("Acetaminophen", "500mg every 8 hours", now, cal.getTime()));
+
+		injuries.add(ankle);
+		injuries.add(arm);
+		injuries.add(concussion);
+		return injuries;
+	}
+
+	// Method to open a new window showing patient details
+	private void openPatientDetails(Patient patient) {
+		Stage detailStage = new Stage(); // New window
+		detailStage.setTitle(patient.getName() + " - Patient Details");
+
+		TabPane tabPane = new TabPane(); // Create a TabPane for organizing data
+		tabPane.setStyle("-fx-background-color: #abbbd4;");
+
+		// --- Info Tab ---
+		VBox infoBox = new VBox(10);
+		infoBox.setPadding(new Insets(10));
+		infoBox.setStyle("-fx-background-color: #abbbd4;");
+
+		// Create styled labels for patient info
+		Label nameLabel = createInfoLabel("Name: " + patient.getName());
+		Label idLabel = createInfoLabel("ID: " + patient.getId());
+		Label sexLabel = createInfoLabel("Sex: " + patient.getSex());
+		Label ageLabel = createInfoLabel("Age: " + patient.getAge());
+		Label heightLabel = createInfoLabel("Height: " + patient.getHeight());
+		Label weightLabel = createInfoLabel("Weight: " + patient.getWeight());
+
+		// Add labels to info box with consistent styling
+		infoBox.getChildren().addAll(nameLabel, idLabel, sexLabel, ageLabel, heightLabel, weightLabel);
+		Tab infoTab = new Tab("Info", infoBox);
+		infoTab.setClosable(false);
+
+		// --- Injury Tab ---
+		VBox injuryBox = new VBox(10);
+		injuryBox.setPadding(new Insets(10));
+		injuryBox.setStyle("-fx-background-color: #abbbd4;");
+
+		// Get list of common injuries with their medications
+		List<Injury> commonInjuries = initializeCommonInjuries();
+
+		// Create dropdown for injury selection
+		ComboBox<Injury> injuryDropdown = new ComboBox<>();
+		injuryDropdown.setItems(FXCollections.observableArrayList(commonInjuries));
+		injuryDropdown.setStyle("-fx-font-size: 14px; -fx-background-color: #e6e6e6;");
+		injuryDropdown.setCellFactory(param -> new ListCell<Injury>() {
+			@Override
+			protected void updateItem(Injury item, boolean empty) {
+				super.updateItem(item, empty);
+				setText(item == null ? null : item.getDescription() + " (Severity: " + item.getSeverity() + ")");
+			}
+		});
+		injuryDropdown.setButtonCell(new ListCell<Injury>() {
+			@Override
+			protected void updateItem(Injury item, boolean empty) {
+				super.updateItem(item, empty);
+				setText(item == null ? "Select Injury" : item.getDescription());
+			}
+		});
+
+		// ListView to display medications for selected injury
+		ListView<Medication> medicationListView = new ListView<>();
+		medicationListView.setStyle("-fx-background-color: #e6e6e6; -fx-font-size: 14px;");
+		medicationListView.setCellFactory(param -> new ListCell<Medication>() {
+			@Override
+			protected void updateItem(Medication item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null) {
+					setText(null);
+				} else {
+					setText(String.format("%s - %s\nFrom: %tD to: %s", item.getName(), item.getDosage(),
+							item.getStartDate(),
+							item.getEndDate() != null ? String.format("%tD", item.getEndDate()) : "Ongoing"));
+				}
+			}
+		});
+
+		// Update medications when injury is selected
+		injuryDropdown.valueProperty().addListener((obs, oldVal, newVal) -> {
+			if (newVal != null) {
+				medicationListView.getItems().setAll(newVal.getPrescribedMedications());
+			}
+		});
+
+		// Add styled labels for injury tab
+		Label selectInjuryLabel = createInfoLabel("Select Injury:");
+		Label prescribedMedsLabel = createInfoLabel("Prescribed Medications:");
+
+		injuryBox.getChildren().addAll(selectInjuryLabel, injuryDropdown, prescribedMedsLabel, medicationListView);
+		Tab injuryTab = new Tab("Injury", injuryBox);
+		injuryTab.setClosable(false);
+
+		// --- Medication Tab ---
+		VBox medicationBox = new VBox(10);
+		medicationBox.setPadding(new Insets(10));
+		medicationBox.setStyle("-fx-background-color: #abbbd4;");
+
+		// ListView to display all medications from all injuries
+		ListView<Medication> allMedsView = new ListView<>();
+		allMedsView.setStyle("-fx-background-color: #e6e6e6; -fx-font-size: 14px;");
+		allMedsView.setCellFactory(medicationListView.getCellFactory());
+
+		// Collect all medications from all injuries
+		List<Medication> allMeds = new ArrayList<>();
+		commonInjuries.forEach(injury -> allMeds.addAll(injury.getPrescribedMedications()));
+		allMedsView.getItems().setAll(allMeds);
+
+		// Add styled label for medication tab
+		Label allMedsLabel = createInfoLabel("All Available Medications:");
+
+		medicationBox.getChildren().addAll(allMedsLabel, allMedsView);
+		Tab medicationTab = new Tab("Medication", medicationBox);
+		medicationTab.setClosable(false);
+
+		tabPane.getTabs().addAll(infoTab, injuryTab, medicationTab);
+		Scene detailScene = new Scene(tabPane, 600, 450);
+		detailStage.setScene(detailScene);
+		detailStage.show();
+	}
+
+	// Helper method to create consistently styled info labels
+	private Label createInfoLabel(String text) {
+		Label label = new Label(text);
+		label.setStyle("-fx-font-size: 14px; -fx-text-fill: #333333; -fx-padding: 5px;");
+		return label;
+	}
+
 	@Override
 	public void start(Stage primaryStage) {
 		// --- Input fields for patient details ---
 		TextField fName = createTextField("First Name");
 		TextField lName = createTextField("Last Name");
-		TextField ID = createTextField("Patient ID (6 digits)");
 		TextField age = createTextField("Age");
 		TextField sex = createTextField("Sex (male/female)");
 		TextField height = createTextField("Height");
 		TextField weight = createTextField("Weight");
 		Button submitButton = new Button("Submit");
+		submitButton.setStyle("-fx-font-size: 14px; -fx-padding: 5px;");
 
 		// --- Left panel for entering patient data ---
-		VBox leftPanel = new VBox(10, fName, lName, ID, age, sex, height, weight, submitButton);
+		VBox leftPanel = new VBox(10, fName, lName, age, sex, height, weight, submitButton);
 		leftPanel.setAlignment(Pos.TOP_CENTER);
 		leftPanel.setStyle("-fx-background-color: #abbbd4; -fx-padding: 10px;");
 
-		// --- Right panel setup with search bar and grid for patients ---
+		// --- Right panel setup with search bar and patient list ---
 		TextField searchBar = createTextField("Search by Name or ID");
+		searchBar.setStyle("-fx-background-color: #e6e6e6;");
 
-		// Grid to hold patient buttons in rows and columns
-		GridPane patientGrid = new GridPane();
-		patientGrid.setHgap(10);
-		patientGrid.setVgap(10);
-		patientGrid.setPadding(new Insets(10));
+		// Create container for patient list with consistent styling
+		VBox patientListContainer = new VBox(10);
+		patientListContainer.setPadding(new Insets(10));
+		patientListContainer.setStyle("-fx-background-color: #abbbd4;");
 
-		// Optional: Wrap grid in a scroll pane
-		ScrollPane scrollPane = new ScrollPane(patientGrid);
+		// Create ListView for patients with custom cell rendering
+		ListView<Patient> patientListView = new ListView<>();
+		patientListView.setStyle("-fx-background-color: #abbbd4;");
+		patientListView.setCellFactory(param -> new ListCell<Patient>() {
+			@Override
+			protected void updateItem(Patient patient, boolean empty) {
+				super.updateItem(patient, empty);
+				if (empty || patient == null) {
+					setText(null);
+					setGraphic(null);
+				} else {
+					// Create styled button for each patient
+					Button patientButton = new Button(patient.getName());
+					patientButton.setMaxWidth(Double.MAX_VALUE);
+					patientButton.setStyle("-fx-font-size: 14px; -fx-padding: 10px; -fx-background-color: #e6e6e6;");
+					patientButton.setOnAction(e -> openPatientDetails(patient));
+					setGraphic(patientButton);
+				}
+			}
+		});
+
+		// Make ListView fill available space
+		VBox.setVgrow(patientListView, Priority.ALWAYS);
+
+		// Add styled label for patient list
+		Label patientListLabel = createInfoLabel("Patient List:");
+
+		// Add components to patient list container
+		patientListContainer.getChildren().addAll(patientListLabel, searchBar, patientListView);
+
+		// Wrap in ScrollPane (though ListView has built-in scrolling)
+		ScrollPane scrollPane = new ScrollPane(patientListContainer);
 		scrollPane.setFitToWidth(true);
 		scrollPane.setStyle("-fx-background: #abbbd4;");
 
-		// Right panel contains the search bar and scrollable grid
-		VBox rightPanel = new VBox(10, searchBar, scrollPane);
-		rightPanel.setAlignment(Pos.TOP_LEFT);
-		rightPanel.setStyle("-fx-background-color: #abbbd4; -fx-padding: 10px;");
+		// Right panel contains the scrollable patient list
+		VBox rightPanel = new VBox();
+		rightPanel.getChildren().add(scrollPane);
+		rightPanel.setStyle("-fx-background-color: #abbbd4;");
 		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
 		// --- Submit button logic ---
@@ -87,12 +288,11 @@ public class MedicalSoftwareGUI extends Application {
 				// Get input from fields
 				String first = fName.getText().trim();
 				String last = lName.getText().trim();
-				String id = ID.getText().trim();
 				String patientSex = sex.getText().trim().toLowerCase();
 
-				// Validate ID (must be 6 digits)
-				if (!id.matches("\\d{6}")) {
-					showError("Patient ID must be exactly 6 digits!");
+				// Validate required fields
+				if (first.isEmpty() || last.isEmpty()) {
+					showError("First and last name are required!");
 					return;
 				}
 
@@ -106,27 +306,20 @@ public class MedicalSoftwareGUI extends Application {
 				String patientHeight = height.getText().trim();
 				String patientWeight = weight.getText().trim();
 
+				// Generate unique 6-digit ID automatically
+				String patientID = generateUniqueID();
+
 				// Create a new Patient object
-				Patient newPatient = new Patient(patientSex, id, first, last, patientAge, patientHeight, patientWeight);
+				Patient newPatient = new Patient(patientSex, patientID, first, last, patientAge, patientHeight,
+						patientWeight);
 				allPatients.add(newPatient); // Add patient to the list
 
-				// Create a button for the new patient
-				Button patientButton = new Button(newPatient.getName());
-				patientButton.setMaxWidth(Double.MAX_VALUE);
-				patientButton.setStyle("-fx-font-size: 14px; -fx-padding: 10px;");
-				patientButton.setOnAction(ev -> openPatientDetails(newPatient));
-
-				// Add the button to the grid
-				int count = patientGrid.getChildren().size();
-				int columns = 3;
-				int row = count / columns;
-				int col = count % columns;
-				patientGrid.add(patientButton, col, row);
+				// Refresh the ListView with updated patient list
+				patientListView.setItems(FXCollections.observableArrayList(allPatients));
 
 				// Clear the input fields after submission
 				fName.clear();
 				lName.clear();
-				ID.clear();
 				age.clear();
 				sex.clear();
 				height.clear();
@@ -140,21 +333,15 @@ public class MedicalSoftwareGUI extends Application {
 
 		// --- Search bar logic ---
 		searchBar.textProperty().addListener((observable, oldValue, newValue) -> {
-			patientGrid.getChildren().clear(); // Clear the grid only
+			List<Patient> filteredPatients = new ArrayList<>();
 			for (Patient patient : allPatients) {
 				if (patient.getName().toLowerCase().contains(newValue.toLowerCase())
 						|| patient.getId().contains(newValue)) {
-					Button patientButton = new Button(patient.getName());
-					patientButton.setMaxWidth(Double.MAX_VALUE);
-					patientButton.setStyle("-fx-font-size: 14px; -fx-padding: 10px;");
-					patientButton.setOnAction(e -> openPatientDetails(patient));
-					int count = patientGrid.getChildren().size();
-					int columns = 3;
-					int row = count / columns;
-					int col = count % columns;
-					patientGrid.add(patientButton, col, row);
+					filteredPatients.add(patient);
 				}
 			}
+			// Update ListView with filtered results
+			patientListView.setItems(FXCollections.observableArrayList(filteredPatients));
 		});
 
 		// --- Layout and scene setup ---
@@ -175,46 +362,6 @@ public class MedicalSoftwareGUI extends Application {
 		primaryStage.setTitle("Medical Program");
 		primaryStage.setScene(scene);
 		primaryStage.show();
-	}
-
-	// Method to open a new window showing patient details
-	private void openPatientDetails(Patient patient) {
-		Stage detailStage = new Stage(); // New window
-		detailStage.setTitle(patient.getName() + " - Patient Details");
-
-		TabPane tabPane = new TabPane(); // Create a TabPane for organizing data
-		tabPane.setStyle("-fx-background-color: #abbbd4;");
-
-		// --- Info Tab ---
-		VBox infoBox = new VBox(10);
-		infoBox.setPadding(new Insets(10));
-		infoBox.getChildren().addAll(new Label("Name: " + patient.getName()), new Label("ID: " + patient.getId()),
-				new Label("Sex: " + patient.getSex()), new Label("Age: " + patient.getAge()),
-				new Label("Height: " + patient.getHeight()), new Label("Weight: " + patient.getWeight()));
-		Tab infoTab = new Tab("Info", infoBox);
-		infoTab.setClosable(false);
-
-		// --- Medication Tab (placeholder) ---
-		VBox medicationBox = new VBox(10);
-		medicationBox.setPadding(new Insets(10));
-		medicationBox.getChildren().add(new Label("Medication records go here..."));
-		Tab medicationTab = new Tab("Medication", medicationBox);
-		medicationTab.setClosable(false);
-
-		// --- Injury Tab (placeholder) ---
-		VBox injuryBox = new VBox(10);
-		injuryBox.setPadding(new Insets(10));
-		injuryBox.getChildren().add(new Label("Injury records go here..."));
-		Tab injuryTab = new Tab("Injury", injuryBox);
-		injuryTab.setClosable(false);
-
-		// Add tabs to the TabPane
-		tabPane.getTabs().addAll(infoTab, medicationTab, injuryTab);
-
-		// Set the scene for the new stage
-		Scene detailScene = new Scene(tabPane, 400, 300);
-		detailStage.setScene(detailScene);
-		detailStage.show();
 	}
 
 	public static void main(String[] args) {
