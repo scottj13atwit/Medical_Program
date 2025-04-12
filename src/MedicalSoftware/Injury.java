@@ -7,14 +7,12 @@ import java.util.Date;
 public class Injury {
     private String injuryID;
     private String description;
-    private int severity;
     private Date date;
     private List<Medication> prescribedMedications;
     
     public Injury(String injuryID, String description, int severity) {
         this.injuryID = injuryID;
         this.description = description;
-        this.severity = severity;
         this.date = new Date();
         this.prescribedMedications = new ArrayList<>();
     }
@@ -34,8 +32,4 @@ public class Injury {
     public String getDescription() {
         return description;
     }
-
-	public String getSeverity() {
-		return null;
-	}
 }

@@ -20,9 +20,6 @@ public class Patient {
         if (s == null || (!s.equalsIgnoreCase("Male") && !s.equalsIgnoreCase("Female"))) {
             throw new IllegalArgumentException("Sex must be Male or Female");
         }
-        if (id == null || id.length() != 6 || !id.matches("\\d+")) {
-            throw new IllegalArgumentException("Patient ID must be 6 digits");
-        }
         
         sex = s;
         patientID = id;
