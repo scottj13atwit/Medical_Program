@@ -1,5 +1,13 @@
 package MedicalSoftware;
 
+/*
+ * 	 TEAM 9
+ * ------------
+ * Jacob Scott
+ * Owen Jones
+ * Aliya Vagapova
+ * 
+ */
 // Here are all the classes and packages we needed to import from both java and javafx
 import javafx.application.Application;
 import javafx.collections.FXCollections;
